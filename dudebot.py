@@ -284,6 +284,11 @@ async def moveservo(ctx):
 @client.command(help="returns the input message, used mostly for testing")
 async def hello(ctx, *arg):
 	await ctx.send(arg)
+
+#sends the github url for source code
+@client.command(help="sends the github url for source code")
+async def source(ctx):
+	await ctx.send('https://github.com/smithcol/dudebot')
 	
 #scans all messages send on the server
 @client.event
