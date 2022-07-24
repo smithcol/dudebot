@@ -9,7 +9,7 @@ import asyncio
 import RPi.GPIO as GPIO
 import morse
 from camcontrol import get_image
-from states import get_param
+from states import get_param, set_param
 #from servotest import turn_servo
 
 print('Starting up DudeBot...')
@@ -69,8 +69,17 @@ RED_PIN = 17
 GREEN_PIN = 27
 BLUE_PIN = 22
 
-#pin for servo signal
-SIGNAL = 23
+#pin for arm servo signals
+#arm servos are numbered, 1 for manipulator to 6 for base
+SERVO1_PIN = 14
+SERVO2_PIN = 15
+SERVO3_PIN = 18
+SERVO4_PIN = 23
+SERVO5_PIN = 24
+SERVO6_PIN = 25
+
+#if the servo receives a duty cycle of 0, it holds position
+SERVO_DO_NOTHING_DUTY = 0
 
 #uses broadcom pin names instead of board names
 GPIO.setmode(GPIO.BCM)
@@ -85,7 +94,12 @@ GPIO.setup(GREEN_PIN, GPIO.OUT)
 GPIO.setup(BLUE_PIN, GPIO.OUT)
 
 #sets the servo signal pin as an output
-GPIO.setup(SIGNAL, GPIO.OUT)
+GPIO.setup(SERVO1_PIN, GPIO.OUT)
+GPIO.setup(SERVO2_PIN, GPIO.OUT)
+GPIO.setup(SERVO3_PIN, GPIO.OUT)
+GPIO.setup(SERVO4_PIN, GPIO.OUT)
+GPIO.setup(SERVO5_PIN, GPIO.OUT)
+GPIO.setup(SERVO6_PIN, GPIO.OUT)
 
 #sets LED PWM cycles at 50Hz starting at 0% duty cycle
 redpwm = GPIO.PWM(RED_PIN, 50)
@@ -97,8 +111,26 @@ greenpwm.start(0)
 bluepwm = GPIO.PWM(BLUE_PIN, 50)
 bluepwm.start(0)
 
-servo = GPIO.PWM(SIGNAL, 50)
-servo.start(0)
+#sets all servo PWMS to 50Hz starting at 0% duty cycle
+servo1 = GPIO.PWM(SERVO1_PIN, 50)
+servo1.start(0)
+
+servo2 = GPIO.PWM(SERVO2_PIN, 50)
+servo2.start(0)
+
+servo3 = GPIO.PWM(SERVO3_PIN, 50)
+servo3.start(0)
+
+servo4 = GPIO.PWM(SERVO4_PIN, 50)
+servo4.start(0)
+
+servo5 = GPIO.PWM(SERVO5_PIN, 50)
+servo5.start(0)
+
+servo6 = GPIO.PWM(SERVO6_PIN, 50)
+servo6.start(0)
+
+servolist = [servo1, servo2, servo3, servo4, servo5, servo6]
 
 BIGDANCE_PATH = '/home/pi/dudebot/media/big-dance.gif'
 MONKEYTYPE_PATH = '/home/pi/dudebot/media/monkey type.jpg'
@@ -210,9 +242,6 @@ async def picture(ctx):
 	get_image()
 	await ctx.send(file = discord.File('/home/pi/dudebot/media/image.jpg'))
 
-#if the servo receives a duty cycle of 0, it holds position
-SERVO_DO_NOTHING_DUTY = 0
-
 #verifies the angle input is valid and maps it to the correct duty cycle range
 def angle_to_duty(angle):
 	if angle >= 0 and angle <= 180:
@@ -245,40 +274,88 @@ async def turn_servo(ctx):
     duty = 2
 
     while duty <= 12:
-        servo.ChangeDutyCycle(duty)
+        servo1.ChangeDutyCycle(duty)
         await asyncio.sleep(1)
-        servo.ChangeDutyCycle(0)
+        servo1.ChangeDutyCycle(0)
         await asyncio.sleep(1)
         duty += 1
 
     await ctx.send("Turning back to 90 degrees for 2 seconds")
-    servo.ChangeDutyCycle(7)
+    servo1.ChangeDutyCycle(7)
     await asyncio.sleep(2)
 
     await ctx.send("Turning back to 0 degrees")
-    servo.ChangeDutyCycle(2)
+    servo1.ChangeDutyCycle(2)
     await asyncio.sleep(0.5)
-    servo.ChangeDutyCycle(0)
+    servo1.ChangeDutyCycle(0)
 
 #turns servo through a sweep of predetermined angles
 async def turn_servo_two(ctx):
 	await ctx.send("DOIN IT")
 
-	for angle in range(0, 180, 5):
+	for angle in range(90, 180, 3):
 		#rapidly sending messages aka angle readings stalls the program via discord timeouts lol
 		#await ctx.send(f"{angle} degrees.")
-		await set_servo_angle_and_wait(servo, angle)
+		await set_servo_angle_and_wait(servo1, angle)
 		await asyncio.sleep(0.1)
 
-	await set_servo_angle_and_wait(servo, 0, 1)
+	await set_servo_angle_and_wait(servo1, 90, 1)
 
 	await ctx.send("Done.")
 
 #the actual discord command to move the servo
 @client.command(help="moves an attached servo over a predefined range of angles")
 async def moveservo(ctx):
-	await turn_servo_two(ctx)
 	await ctx.send('Turning servo')
+	await turn_servo_two(ctx)
+
+#moves the robotic arm
+@client.command(help="moves the robotic arm, put in form servo angle")
+async def arm(ctx, *arg):
+	#checks for inputs about status and turning on the robotic arm
+	#will be fully implemented later
+	if len(arg) == 1:
+		if arg[0] == "status":
+			await ctx.send('Arm status: off')
+		elif arg[0] == "on":
+			await ctx.send('Temporarily unavailable')
+		elif arg[0] == "off":
+			for num in range(6):
+				servolist[num].ChangeDutyCycle(SERVO_DO_NOTHING_DUTY)
+			await ctx.send('Arm status: off')
+		return
+
+	#continues if the input is even, or there are adequate servo and angle pairs
+	if len(arg) % 2 == 1:
+		await ctx.send('Please enter the correct number of parameters')
+		return
+
+	stack = iter(arg)
+
+	#iterates through input and checks that each command entered is 
+	#valid within given arm constraints for each servo
+	for num in range(int(len(arg) / 2)):
+		servo = int(next(stack))
+		pos = int(next(stack))
+
+		#servo input must be for 1 of 6 arm servos
+		if servo < 1 or servo > 6:
+			await ctx.send('Please enter a valid servo')
+			return
+		
+		#angle for each servo must be within the 180 degree limit
+		if pos < 0 or pos > 180:
+			await ctx.send('Please enter a valid angle')
+			return
+
+		#the end effector servo only has a range between 90 (open) and 180 (closed)
+		if servo == 1 and (pos < 90 or pos > 180):
+			await ctx.send('End effector (servo 1) angle must be between 90 and 180 degrees')
+			return
+
+		#assigns the angle position to each servo and prints to discord
+		await set_servo_angle_and_wait(servolist[servo - 1], pos, 1)
+		await ctx.send('Setting servo ' + str(servo) + ' to angle ' + str(pos))
 
 #returns the input message, used mostly for testing	
 @client.command(help="returns the input message, used mostly for testing")
