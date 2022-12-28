@@ -381,6 +381,16 @@ async def on_message(message):
 	if "dude" in message_lower and random.random() < 0.25:
 		await message.channel.send("Dude...")
 
+    #sends thinking emoji if someone is thinking
+	if "mmm" in message_lower:
+		chance = random.random()
+		if chance < 0.25:
+			await message.channel.send('https://tenor.com/view/hmm-emoji-thinking-emoji-let-me-think-gif-16435497')
+		elif chance >= 0.25 and chance < 0.5:
+			await message.channel.send('https://tenor.com/view/emoji-thinking-emoji-think-confused-hmm-gif-15742715')
+		elif chance >= 0.5 and chance < 0.75:
+			await message.channel.send('https://tenor.com/view/meme-thinking-gif-23334820')
+
 	#sends the famous The Dude quote if a word from opinions array is found
 	if any(word in message_lower for word in opinions):
 		if random.random() < 0.25:
@@ -394,8 +404,11 @@ async def on_message(message):
 	if random.random() < 0.005:
 		await message.reply(file = discord.File(MONKEYTYPE_PATH))
 
-	if "morb" in message_lower and random.random() < 0.25:
+	if "morb" in message_lower and random.random() < 1:
 		await message.channel.send('Stop it, get help')
+
+	if "test" in message_lower and random.random() < 0.5:
+		await message.channel.send('Testes deez nuts')
 
 	#non-ascii quote delimiter used? fuck you (maybe)
 	if "’" in message_lower:
