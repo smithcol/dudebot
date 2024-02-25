@@ -388,27 +388,27 @@ async def main():
 		#sends thinking emoji if someone is thinking
 		if "mmm" in message_lower:
 			chance = random.random()
-			if chance < 0.25:
+			if chance < 0.1:
 				await message.channel.send('https://tenor.com/view/hmm-emoji-thinking-emoji-let-me-think-gif-16435497')
-			elif chance >= 0.25 and chance < 0.5:
+			elif chance >= 0.1 and chance < 0.2:
 				await message.channel.send('https://tenor.com/view/emoji-thinking-emoji-think-confused-hmm-gif-15742715')
-			elif chance >= 0.5 and chance < 0.75:
+			elif chance >= 0.2 and chance < 0.3:
 				await message.channel.send('https://tenor.com/view/meme-thinking-gif-23334820')
 
 		#sends the famous The Dude quote if a word from opinions array is found
 		if any(word in message_lower for word in opinions):
-			if random.random() < 0.25:
+			if random.random() < 0.1:
 				await message.channel.send("that's just, like, your opinion, man")
 
 		#sends the dancing big man if someone uses a word from big array
-		if any(word in message_lower for word in big) and random.random() < 0.25:
+		if any(word in message_lower for word in big) and random.random() < 0.15:
 			await message.reply('https://tenor.com/view/big-dance-party-rock-funny-haha-poop-gif-18703825')
 
 		#deploy the monkey when the dude deems it necessary
-		if random.random() < 0.005:
+		if random.random() < 0.001:
 			await message.reply(file = discord.File(MONKEYTYPE_PATH))
 
-		if "morb" in message_lower and random.random() < 1:
+		if "morb" in message_lower and random.random() < 0.5:
 			await message.channel.send('Stop it, get help')
 
 		if "test" in message_lower and random.random() < 0.15:
@@ -419,9 +419,9 @@ async def main():
 			chance = random.random()
 			if chance < 0.01:
 				await message.channel.send('Fuck off')
-			elif chance >= 0.01 and chance <= 0.1:
+			elif chance >= 0.01 and chance <= 0.075:
 				await message.channel.send(':(')
-			elif chance >= 0.1 and chance < 0.2:
+			elif chance >= 0.075 and chance < 0.15:
 				await message.channel.send('Why do you do this to me?')
 			return
 
